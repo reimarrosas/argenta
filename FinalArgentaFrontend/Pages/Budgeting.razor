@@ -1,0 +1,25 @@
+﻿@page "/budgeting"
+
+<PageTitle>Argenta | Budgeting</PageTitle>
+
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="wrapper">
+                <BudgetTable @bind-SelectedBudget="SelectedBudget" />
+            </div>
+        </div>
+        <div class="col">
+            <div class="wrapper">
+                @if(SelectedBudget != null)
+                {
+                    <BudgetItemTable SelectedBudget="SelectedBudget" />
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public BudgetDTO? SelectedBudget { get; set; }
+}

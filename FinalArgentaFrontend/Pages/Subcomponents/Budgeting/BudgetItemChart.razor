@@ -1,0 +1,60 @@
+﻿<PieChart @ref="pieChart" TItem="int" />
+
+@code {
+    [Parameter]
+    public IEnumerable<BudgetItemDTO> BudgetItems { get; set; } = null!;
+
+    PieChart<int> pieChart = null!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await HandleRedraw();
+        }
+    }
+
+    public async Task HandleRedraw()
+    {
+        await pieChart.Clear();
+
+        await pieChart.AddLabelsDatasetsAndUpdate(GenerateLabels(), GetDataSet());
+    }
+
+
+    PieChartDataset<int> GetDataSet()
+    {
+        return new PieChartDataset<int>
+            {
+                Label = "Budget Percentages",
+                Data = BudgetItems.Select(bi => bi.Percentage).ToList(),
+                BackgroundColor = GenerateColors(),
+                BorderColor = BudgetItems.Select(bi => ChartColor.FromHtmlColorCode("#000000")).ToList(),
+            };
+    }
+
+    List<string> GenerateLabels()
+    {
+        return BudgetItems.Select(bi => bi.Name).ToList();
+    }
+
+    List<string> GenerateColors()
+    {
+        List<string> bgColors = new();
+        foreach (var i in BudgetItems)
+        {
+            bgColors.Add(ChartColor.FromRgba((byte)new Random().Next(50, 206),
+                                             (byte)new Random().Next(50, 206),
+                                             (byte)new Random().Next(50, 206),
+                                             GenerateAlpha()));
+        }
+
+        return bgColors;
+    }
+
+    float GenerateAlpha()
+    {
+        var r = new Random(DateTime.Now.Millisecond);
+        return r.NextSingle();
+    }
+}

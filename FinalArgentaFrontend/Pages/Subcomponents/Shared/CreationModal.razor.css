@@ -1,0 +1,32 @@
+﻿.cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 5;
+}
+
+.form-container {
+    transform: translateY(-5vh);
+    background-color: white;
+    flex-basis: 800px;
+    padding: 1em 2em;
+    border-radius: 1em;
+    box-shadow: 0 0 1.5em rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    position: relative;
+}
+
+.close-div {
+    text-align: right;
+}
+
+.form-close {
+    background-color: transparent;
+    border: none;
+}

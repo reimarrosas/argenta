@@ -1,0 +1,107 @@
+﻿@page "/"
+
+<PageTitle>Argenta | Home</PageTitle>
+
+@* === HERO === *@
+<_Section IsReverse=false>
+    <_SectionContent
+        SectionTitle="Welcome to Argenta"
+        SectionParagraph=
+            "This is your all-in-one personal finance
+            planner and recorder that allows you to
+            fulfill your financial goals and dreams."
+    />
+    <_SectionImage
+        SrcImg="images/hero.svg"
+        AltText="Person looking at a computer displaying a graph."
+    />
+</_Section>
+
+@* === BUDGETING === *@
+<_Section IsReverse=true>
+    <_SectionImage
+        SrcImg="images/budgeting.svg"
+        AltText=
+            "Person riding a giant piggy bank trying to
+            insert a large coin."
+    />
+    <_SectionContent
+        SectionTitle="Budgeting Made Easy"
+        SectionParagraph=
+            "Just input the total amount you currently
+            have and add each expenses with their
+            corresponding percentage, then Argenta will
+            automatically create a chart with calculated
+            values for each of your entry."
+        BtnText="Budget Now!"
+        BtnLink="budgeting"
+    />
+</_Section>
+
+@* === TRANSACTIONS === *@
+<_Section IsReverse=false>
+    <_SectionContent
+        SectionTitle="Track Your Transactions"
+        SectionParagraph=
+            "Record the inflow and outflow of your cash
+            in order to see where you are over spending.
+            Look back in history to check if there are
+            any lifestyle changes you need to adjust
+            for."
+        BtnText="Record Now!"
+        BtnLink="transactions"
+    />
+    <_SectionImage
+        SrcImg="images/transactions.svg"
+        AltText=
+            "Person holding bills and looking at
+            transaction list."
+    />
+</_Section>
+
+@* === GOAL TRACKING === *@
+<_Section IsReverse=true>
+    <_SectionImage
+        SrcImg="images/goals.svg"
+        AltText=
+            "A guy and a girl cheering around a giant
+            trophy."
+    />
+    <_SectionContent
+        SectionTitle="Achieve Your Goals"
+        SectionParagraph=
+            "Enter your goal and the amount it takes.
+            You can track your progress in putting
+            the data of installment payment and watch
+            how you attain your objective. You can
+            even see the details visually using
+            Argenta's graphing functionality."
+        BtnText="Set your goals!"
+        BtnLink="goals"
+    />
+</_Section>
+
+@* === Investments === *@
+<_Section IsReverse=false>
+    <_SectionContent
+        SectionTitle="Review Your Investments"
+        SectionParagraph=
+            "Input your portfolio and store your
+            investment entries with Argenta. Argenta
+            uses a leading provider of stock market
+            data, Alpha Vantage in order to track
+            the progression of your portfolio.
+            Argenta can also graph the historical
+            data with the returns of your holdings
+            to visualize its growth over time."
+        BtnText="Invest now!"
+        BtnLink="investments"
+    />
+    <_SectionImage
+        SrcImg="images/investments.svg"
+        AltText=
+            "A business person looking at a giant
+            computer monitor displaying a progression
+            chart."
+    />
+</_Section>

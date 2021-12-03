@@ -1,0 +1,12 @@
+﻿.col {
+    margin-inline: auto;
+    overflow-x: auto;
+}
+
+.container {
+    min-height: 60vh;
+}
+
+th {
+    white-space: nowrap;
+}

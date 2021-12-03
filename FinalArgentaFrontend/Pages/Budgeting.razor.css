@@ -1,0 +1,15 @@
+﻿::deep .button-div {
+    text-align: right;
+}
+
+.col {
+    margin-inline: auto;
+}
+
+.container {
+    min-height: 60vh;
+}
+
+.wrapper {
+    overflow-x: auto;
+}

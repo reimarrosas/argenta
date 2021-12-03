@@ -1,0 +1,106 @@
+﻿@inject ILocalStorageService localStorage
+@using System.Net.Http
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<header class="argenta-header mb-5">
+    <div class="container-md">
+        <div class="header-group">
+            <NavLink class="header-title" href="">
+                <h1 class="fw-bolder">Argenta</h1>
+            </NavLink>
+            <button @onclick="ToggleNav" class="navigation-toggler" type="button">
+                <img class="navigation-toggler-icon" src="images/hamburger.svg" alt="Hamburger icon." />
+            </button>
+        </div>
+        <form class="guid-form" @onsubmit="HandleSubmit">
+            <input type="text" @bind="InputVal" @oninput="@((e) => { InputVal = (string)e.Value!; })" placeholder="ID..." aria-label="User ID" />
+            <input type="submit" class="undisplay" />
+        </form>
+        <nav class="navigation-main @(IsToggled ? "" : "undisplay")" aria-label="primary">
+            <ul class="nav-main-list">
+                <li class="nav-main-item">
+                    <NavLink class="nav-main-link" href="budgeting">
+                        <span nav-link-ctn>Budgeting</span>
+                    </NavLink>
+                </li>
+                <li class="nav-main-item">
+                    <NavLink class="nav-main-link" href="transactions">
+                        <span nav-link-ctn>Transactions</span>
+                    </NavLink>
+                </li>
+                <li class="nav-main-item">
+                    <NavLink class="nav-main-link" href="goals">
+                        <span nav-link-ctn>Goal Tracking</span>
+                    </NavLink>
+                </li>
+                <li class="nav-main-item">
+                    <NavLink class="nav-main-link" href="investments">
+                        <span nav-link-ctn>Investments</span>
+                    </NavLink>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+@code {
+    public bool IsToggled { get; set; } = false;
+
+    [CascadingParameter]
+    public MainLayout Store { get; set; } = null!;
+
+    public string InputVal { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string storedUserId = await localStorage.GetItemAsStringAsync("userId");
+
+        if (storedUserId != null)
+        {
+            Store.SetUserId(Guid.Parse(storedUserId));
+        } else
+        {
+            var newId = Guid.NewGuid();
+            Store.SetUserId(newId);
+            await localStorage.SetItemAsStringAsync("userId", newId.ToString());
+            var body = new UserDTO
+                {
+                    Id = newId
+                };
+            await Http.PostAsJsonAsync<UserDTO>("api/Users", body);
+        }
+
+        InputVal = Store.UserId.ToString();
+    }
+
+    public async Task HandleSubmit()
+    {
+        Guid guid;
+        bool isValidGuid = Guid.TryParse(InputVal, out guid);
+        if (isValidGuid)
+        {
+            await localStorage.SetItemAsStringAsync("userId", InputVal);
+
+            var response = await Http.GetFromJsonAsync<UserDTO>($"api/Users?userId={InputVal}");
+
+            if (response == null)
+            {
+                var body = new UserDTO
+                    {
+                        Id = guid
+                    };
+                await Http.PostAsJsonAsync<UserDTO>($"api/Users", body);
+            }
+            Store.SetUserId(guid);
+        } else
+        {
+            InputVal = Store.UserId.ToString();
+        }
+    }
+
+    public void ToggleNav()
+    {
+        IsToggled = !IsToggled;
+    }
+}

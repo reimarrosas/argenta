@@ -1,0 +1,28 @@
+﻿<div class="col section-content d-flex flex-column justify-content-center">
+    <h1 class="fw-bold fs-2 mb-3">
+        @SectionTitle
+    </h1>
+        <p>@SectionParagraph</p>
+    @if (!string.IsNullOrEmpty(BtnText))
+    {
+        <a
+            class="btn btn-bg text-dark"
+            role="button"
+            href="@BtnLink"
+        >
+            @BtnText
+        </a>   
+    }
+    
+</div>
+
+@code {
+    [Parameter]
+    public string? BtnText { get; set; }
+    [Parameter]
+    public string? BtnLink { get; set; }
+    [Parameter]
+    public string? SectionTitle { get; set; }
+    [Parameter]
+    public string? SectionParagraph { get; set; }
+}

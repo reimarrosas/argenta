@@ -1,0 +1,42 @@
+﻿::deep .section-img,
+::deep .section-content {
+    min-height: 165px;
+    min-width: auto;
+    max-width: 55ch;
+}
+
+::deep p {
+    margin-bottom: 0;
+}
+
+::deep img
+::deep .section-img {
+    max-height: 270px;
+}
+
+::deep .btn-bg {
+    background-color: #4d9fd6;
+    max-width: 45%;
+    padding: 0.8em 1.2em;
+    align-items: flex-end;
+    margin-top: 1em;
+}
+
+.section-bg {
+    background-color: #f0b156;
+}
+
+@media screen and (max-width: 767px) {
+    .row {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    ::deep .btn-bg {
+        max-width: 100%;
+    }
+    
+    ::deep .section-img {
+        order: -1;
+    }
+}

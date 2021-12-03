@@ -1,0 +1,31 @@
+﻿<div class="cover">
+    <div class="form-container">
+        <div class="close-div">
+            <button type="button" class="form-close" @onclick="CloseModal">
+                <i class="oi oi-x"></i>
+            </button>
+        </div>
+        <h1>@Title</h1>
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = null!;
+
+    [Parameter]
+    public bool CreateEntry { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> CreateEntryChanged { get; set; }
+
+    public async Task CloseModal()
+    {
+        CreateEntry = false;
+        await CreateEntryChanged.InvokeAsync(CreateEntry);
+    }
+}

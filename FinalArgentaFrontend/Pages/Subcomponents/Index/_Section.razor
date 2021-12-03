@@ -1,0 +1,14 @@
+﻿<div class="@(IsReverse ? "section-bg mb-5" : "")">
+    <section class="container @(IsReverse ? "py-5" : "mb-5")">
+        <div class="row align-items-center justify-content-center flex-wrap">
+            @ChildContent
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsReverse { get; set; }
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

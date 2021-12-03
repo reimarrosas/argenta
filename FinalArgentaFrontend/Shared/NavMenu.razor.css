@@ -1,0 +1,123 @@
+.argenta-header {
+    display: flex;
+    padding-block: 1.2em;
+    background-color: #2b2b2b;
+}
+
+.container-md {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.header-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+::deep .header-title {
+    color: #ebebeb;
+    text-decoration: none;
+}
+
+.fw-bolder {
+    margin-bottom: 0;
+}
+
+.guid-form {
+    margin: 0 auto
+}
+
+.guid-form > input[type="text"] {
+    background-color: #2b2b2b;
+    border: none;
+    color: #ababab;
+    font-size: 0.8em;
+    width: 248px;
+}
+
+.guid-form > input[type="text"]:hover,
+.guid-form > input[type="text"]:focus {
+    outline: 1px solid #ababab;
+}
+
+.navigation-toggler {
+    display: none;
+    background-color: transparent;
+    border: none;
+    padding: 3px;
+    width: 54px;
+    height: 54px;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+}
+
+.nav-main-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5em;
+}
+
+::deep .nav-main-link {
+    font-size: 1.3rem;
+    color: #ababab;
+    transition: color ease-in-out 250ms;
+    text-decoration: none;
+}
+
+::deep .nav-main-link:hover {
+    color: #ebebeb;
+}
+
+.undisplay {
+    display: none;
+}
+
+@media screen and (max-width: 991px) {
+    .header-group {
+        width: 100%;
+    }
+
+    .navigation-main {
+        width: 100%;
+        transition: all ease-in-out 1s;
+    }
+
+    .nav-main-list {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .nav-main-item {
+        width: 100%;
+        text-align: center;
+        padding-block: 0.75em;
+    }
+
+    .nav-main-item:first-of-type {
+        margin-top: 0.75em;
+    }
+
+    .nav-main-item:hover {
+        background-color: #4b4b4b;
+    }
+
+    .navigation-toggler {
+        display: inline;
+    }
+}
+
+@media screen and (min-width: 992px) {
+    nav.navigation-main {
+        display: block;
+    }
+}

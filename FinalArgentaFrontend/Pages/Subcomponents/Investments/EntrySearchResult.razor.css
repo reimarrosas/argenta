@@ -1,0 +1,29 @@
+﻿.undisplay {
+    display: none;
+}
+
+.search-result-list {
+    list-style: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 0;
+    width: 100%;
+
+    background-color: white;
+    border: 1px solid black;
+}
+
+.search-result-item {
+    text-align: center;
+    padding: 1em 2em;
+    cursor: pointer;
+}
+
+p {
+    margin: 0;
+}
+
+.search-result-item:hover {
+    background-color: #ebebeb;
+}
