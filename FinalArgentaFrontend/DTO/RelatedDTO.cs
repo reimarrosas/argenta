@@ -1,4 +1,6 @@
-﻿namespace FinalArgentaFrontend.DTO
+﻿using System;
+
+namespace FinalArgentaFrontend.DTO
 {
     public class RelatedDTO : BaseDTO
     {

@@ -1,4 +1,5 @@
 ﻿using FinalArgentaFrontend.DTO;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FinalArgentaFrontend.Utils
