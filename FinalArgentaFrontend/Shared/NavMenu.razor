@@ -1,7 +1,6 @@
 ﻿@inject ILocalStorageService localStorage
-@using System.Net.Http
-@using System.Net.Http.Json
 @inject HttpClient Http
+@inject NavigationManager navManager
 
 <header class="argenta-header mb-5">
     <div class="container-md">
@@ -93,6 +92,7 @@
                 await Http.PostAsJsonAsync<UserDTO>($"api/Users", body);
             }
             Store.SetUserId(guid);
+            navManager.NavigateTo(navManager.Uri, forceLoad: true);
         } else
         {
             InputVal = Store.UserId.ToString();
