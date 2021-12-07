@@ -9,6 +9,7 @@
                 <label class="form-label" for="name">Name</label>
                 <InputText class="form-control" id="name" name="Name" @bind-Value="BudgetItem.Name" />
                 <ValidationMessage For="@(() => BudgetItem.Name)" />
+                @if (!IsNameValid) { <span class="text-danger">Name already exists</span> }
             </div>
             <div class="form-group mb-3">
                 <label class="form-label" for="percentage">Percentage</label>
@@ -26,7 +27,7 @@
 @if (GenerateChart)
 {
     <CreationModal Title="" @bind-CreateEntry="GenerateChart">
-        <BudgetItemChart BudgetItems="BudgetItems" />
+        <BudgetItemChart SelectedBudget="SelectedBudget" BudgetItems="BudgetItems" />
     </CreationModal>
 }
 
@@ -35,7 +36,7 @@
                 <button
                     @onclick="ToggleChart"
                     type="button"
-                    class="btn btn-primary button"
+                    class="btn @(CheckIfChartGenerationPossible() ? "btn-primary" : "btn-secondary") button"
                 >
                     <i class="oi oi-bar-chart"></i>
                 </button>
@@ -90,6 +91,8 @@
 
     public bool IsPercentageValid { get; set; } = true;
 
+    public bool IsNameValid { get; set; } = true;
+
     public bool GenerateChart { get; set; } = false;
 
     public BudgetItemDTO BudgetItem { get; set; } = new();
@@ -108,7 +111,7 @@
 
     public void ToggleCreateBudgetItem()
     {
-        CreateBudgetItem = true;
+            CreateBudgetItem = true;
     }
 
     public async Task DeleteBudgetItem(BudgetItemDTO budgetItem)
@@ -126,16 +129,19 @@
 
     public async Task HandleSubmit(EditContext context)
     {
-        IsPercentageValid = true;
+        IsPercentageValid = IsNameValid = true;
         bool areInputsValid = context.Validate();
         if (BudgetItems != null && BudgetItems.Any())
         {
             var currTotal = BudgetItems.Select(bi => bi.Percentage)
                                        .Aggregate((acc, cur) => acc + cur);
             IsPercentageValid = currTotal + BudgetItem.Percentage <= 100;
+
+            IsNameValid = !BudgetItems.Any(bi => bi.Name == BudgetItem.Name);
         }
 
-        if (IsPercentageValid && areInputsValid)
+
+        if (IsPercentageValid && areInputsValid && IsNameValid)
         {
             BudgetItem.BaseId = SelectedBudget.Id;
             await Http.PostAsJsonAsync("api/BudgetItem", BudgetItem);
@@ -145,5 +151,13 @@
         }
     }
 
-    private void ToggleChart() => GenerateChart = !GenerateChart;
+    private void ToggleChart()
+    {
+        GenerateChart = CheckIfChartGenerationPossible();
+    }
+
+    private bool CheckIfChartGenerationPossible() {
+        return BudgetItems != default
+            && BudgetItems.Aggregate(0, (acc, cur) => acc + cur.Percentage) == 100;
+    }
 }
