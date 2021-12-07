@@ -1,10 +1,13 @@
-﻿<PieChart @ref="pieChart" TItem="int" />
+﻿<PieChart @ref="pieChart" TItem="decimal" />
 
 @code {
     [Parameter]
     public IEnumerable<BudgetItemDTO> BudgetItems { get; set; } = null!;
 
-    PieChart<int> pieChart = null!;
+    [Parameter]
+    public BudgetDTO SelectedBudget { get; set; } = null!;
+
+    PieChart<decimal> pieChart = null!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -22,14 +25,14 @@
     }
 
 
-    PieChartDataset<int> GetDataSet()
+    PieChartDataset<decimal> GetDataSet()
     {
-        return new PieChartDataset<int>
+        return new PieChartDataset<decimal>
             {
                 Label = "Budget Percentages",
-                Data = BudgetItems.Select(bi => bi.Percentage).ToList(),
+                Data = BudgetItems.Select(bi => bi.Percentage / 100.0M * SelectedBudget.Total).ToList(),
                 BackgroundColor = GenerateColors(),
-                BorderColor = BudgetItems.Select(bi => ChartColor.FromHtmlColorCode("#000000")).ToList(),
+                BorderColor = BudgetItems.Select(bi => ChartColor.FromHtmlColorCode("#000000")).ToList()
             };
     }
 
