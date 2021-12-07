@@ -11,7 +11,7 @@ namespace FinalArgentaFrontend.DTO
         public string? Description { get; set; }
 
         [Required,
-         Range(0, double.MaxValue, ErrorMessage = "Value must be positive.")]
+         Range(1, double.MaxValue, ErrorMessage = "Value must be positive.")]
         public decimal Value { get; set; }
 
         [Required,
