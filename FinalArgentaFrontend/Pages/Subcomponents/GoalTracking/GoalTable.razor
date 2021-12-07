@@ -118,6 +118,8 @@
 
         await Http.SendAsync(request);
         await FetchGoals();
+        SelectedGoal = null;
+        await SelectedGoalChanged.InvokeAsync(SelectedGoal);
     }
 
     private async Task FetchGoals()

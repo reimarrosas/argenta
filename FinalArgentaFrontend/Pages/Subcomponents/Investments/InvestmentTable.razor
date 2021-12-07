@@ -104,6 +104,8 @@
 
         await Http.SendAsync(request);
         await FetchInvestments();
+        SelectedInvestment = null;
+        await SelectedInvestmentChanged.InvokeAsync(SelectedInvestment);
     }
 
     private async Task HandleValidSubmit()

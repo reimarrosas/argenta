@@ -130,6 +130,8 @@
 
         await Http.SendAsync(request);
         Budgets = await FetchBudgets();
+        SelectedBudget = null;
+        await SelectedBudgetChanged.InvokeAsync(SelectedBudget);
     }
 
 }
