@@ -1,0 +1,75 @@
+﻿@inject HttpClient Http
+
+<ul class="search-result-list">
+    @if (SearchResults != null)
+    {
+        @foreach(var item in SearchResults["bestMatches"].EnumerateArray())
+        {
+            <li class="search-result-item" @onclick="@(() => HandleClick(item))">
+                <p class="fw-bold">@GetItem(item, "2. name")</p>
+                <p>@GetItem(item, "1. symbol")</p>
+            </li>   
+        }
+    }
+</ul>
+
+@code {
+    [Parameter]
+    public string SearchQuery { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<string> SearchQueryChanged { get; set; }
+
+    [Parameter]
+    public bool DisplaySearch { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> DisplaySearchChanged { get; set; }
+
+    [Parameter]
+    public bool Submittable { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> SubmittableChanged { get; set; }
+
+    public dynamic? SearchResults { get; set; }
+
+    private string _SearchQuery { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _SearchQuery = SearchQuery;
+        await FetchTickers();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_SearchQuery != SearchQuery)
+        {
+            await FetchTickers();
+        }
+    }
+
+    private async Task FetchTickers()
+    {
+        SearchResults = JsonSerializer.Deserialize<Dictionary<string, object>>(await Http.GetStringAsync(new Uri($"https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords={SearchQuery}&apikey=S9T8F28T6PAYVQVC")));
+    }
+
+    private async Task HandleClick(dynamic item)
+    {
+        var val = GetItem(item, "1. symbol");
+        SearchQuery = val;
+        await SearchQueryChanged.InvokeAsync(SearchQuery);
+        DisplaySearch = false;
+        await DisplaySearchChanged.InvokeAsync(DisplaySearch);
+        Submittable = true;
+        await SubmittableChanged.InvokeAsync(Submittable);
+    }
+
+    private string GetItem(object item, string key)
+    {
+        var itemStr = item.ToString();
+        var itemDict = JsonSerializer.Deserialize<Dictionary<string, string>>(itemStr!);
+        return itemDict![key];
+    }
+}

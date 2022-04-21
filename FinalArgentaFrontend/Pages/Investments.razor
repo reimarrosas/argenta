@@ -1,0 +1,25 @@
+﻿@page "/investments"
+
+<PageTitle>Argenta | Investments</PageTitle>
+
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <div class="wrapper">
+                <InvestmentTable @bind-SelectedInvestment="SelectedInvestment" />
+            </div>
+        </div>
+        <div class="col">
+            <div class="wrapper">
+                @if(SelectedInvestment != null)
+                {
+                    <InvestmentEntryTable SelectedInvestment="SelectedInvestment" />
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public InvestmentDTO? SelectedInvestment { get; set; }
+}

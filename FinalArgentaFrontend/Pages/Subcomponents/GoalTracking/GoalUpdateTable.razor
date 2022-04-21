@@ -1,0 +1,140 @@
+﻿@inject HttpClient Http
+@inject ILocalStorageService localStorage
+
+@if (CreateGoalUpdate)
+{
+    <CreationModal Title="Goal Update" @bind-CreateEntry="CreateGoalUpdate">
+        <EditForm Model="@GoalUpdate" OnValidSubmit="@HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <div class="form-group mb-3">
+                <label class="form-label" for="payment">Payment</label>
+                <InputNumber class="form-control" id="payment" name="payment" @bind-Value="GoalUpdate.Payment" />
+                <ValidationMessage For="@(() => GoalUpdate.Payment)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="note">Note</label>
+                <InputText class="form-control" id="note" name="note" @bind-Value="GoalUpdate.Note" />
+                <ValidationMessage For="@(() => GoalUpdate.Note)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="createdAt">Input Date</label>
+                <InputDate class="form-control" id="createdAt" name="createdAt" @bind-Value="GoalUpdate.CreatedAt" />
+                <ValidationMessage For="@(() => GoalUpdate.CreatedAt)" />
+            </div>
+            <div class="form-group mb-3">
+                <input type="submit" class="btn btn-dark" value="Create" />
+            </div>
+        </EditForm>
+    </CreationModal>
+}
+
+@if (GenerateChart)
+{
+    <CreationModal Title="" @bind-CreateEntry="GenerateChart">
+        <GoalUpdateChart GoalUpdates="GoalUpdates" SelectedGoal="SelectedGoal" />
+    </CreationModal>
+}
+
+<h1>Goal Updates</h1>
+<div class="button-div" style="text-align: right">
+    <button
+        @onclick="ToggleGenerateChart"
+        type="button"
+        class="btn btn-primary button"
+    >
+        <i class="oi oi-bar-chart"></i>
+    </button>
+    <button
+        @onclick="ToggleCreateGoalUpdate"
+        type="button"
+        class="btn btn-success button"
+    >
+        <i class="oi oi-plus"></i>
+    </button>
+</div>
+<table class="table table-hover">
+    <thead class="thead-dark">
+        <th>Payment</th>
+        <th>Note</th>
+        <th>Action</th>
+    </thead>
+    <tbody>
+        @if (GoalUpdates != null)
+        {
+            @foreach (var goalUpdate in GoalUpdates)
+            {
+                <tr>
+                    <td class="align-middle">@CurrMod(goalUpdate.Payment)</td>
+                    <td class="align-middle">@goalUpdate.Note</td>
+                    <td class="align-middle">
+                        <button
+                            @onclick="@(() => DeleteGoalUpdate(goalUpdate))"
+                            type="button"
+                            class="btn btn-danger"
+                        >
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public GoalDTO SelectedGoal { get; set; } = null!;
+
+    [Parameter]
+    public Func<decimal, string> CurrMod { get; set; } = null!; 
+
+    public GoalUpdateDTO GoalUpdate { get; set; } = new();
+
+    public bool CreateGoalUpdate { get; set; } = false;
+
+    public bool GenerateChart { get; set; } = false;
+
+    private IEnumerable<GoalUpdateDTO>? GoalUpdates { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await FetchGoalUpdates();
+    }
+
+    private async Task FetchGoalUpdates()
+    {
+        GoalUpdates = await Http.GetFromJsonAsync<IEnumerable<GoalUpdateDTO>>($"api/GoalUpdate?baseId={SelectedGoal.Id}");
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        GoalUpdate.BaseId = SelectedGoal.Id;
+        await Http.PostAsJsonAsync<GoalUpdateDTO>("api/GoalUpdate", GoalUpdate);
+        GoalUpdate = new();
+        CreateGoalUpdate = false;
+        await FetchGoalUpdates();
+    }
+
+    private void ToggleCreateGoalUpdate()
+    {
+        CreateGoalUpdate = !CreateGoalUpdate;
+    }
+
+    private void ToggleGenerateChart()
+    {
+        GenerateChart = !GenerateChart;
+    }
+
+    private async Task DeleteGoalUpdate(GoalUpdateDTO goalUpdate)
+    {
+        var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri($"{Http.BaseAddress}api/GoalUpdate"),
+                Content = new StringContent(JsonSerializer.Serialize(goalUpdate), Encoding.UTF8, "application/json")
+            };
+
+        await Http.SendAsync(request);
+        await FetchGoalUpdates();
+    }
+}

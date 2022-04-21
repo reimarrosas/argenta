@@ -1,0 +1,164 @@
+﻿@inject HttpClient Http
+@inject ILocalStorageService localStorage
+
+@page "/transactions"
+
+<PageTitle>Argenta | Transactions</PageTitle>
+
+@if (CreateTransaction)
+{
+    <CreationModal Title="Transactions" @bind-CreateEntry="CreateTransaction">
+        <EditForm Model="@Transaction" OnValidSubmit="@HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <div class="form-group mb-3">
+                <label class="form-label" for="input">Input</label>
+                <InputNumber class="form-control" id="input" name="Input" @bind-Value="Transaction.Input" />
+                <ValidationMessage For="@(() => Transaction.Input)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="output">Output</label>
+                <InputNumber class="form-control" id="output" name="Output" @bind-Value="Transaction.Output" />
+                <ValidationMessage For="@(() => Transaction.Output)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="description">Description</label>
+                <InputText class="form-control" id="description" name="Description" @bind-Value="Transaction.Description" />
+                <ValidationMessage For="@(() => Transaction.Description)" />
+            </div>
+            <div class="form-group mb-3">
+                <input type="submit" class="btn btn-dark" value="Create" />
+            </div>
+        </EditForm>
+    </CreationModal>
+}
+
+@if (GenerateChart)
+{
+    <CreationModal Title="" @bind-CreateEntry="GenerateChart">
+        <TransactionChart Transactions="TransactionList" />
+    </CreationModal>
+}
+
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>Transactions</h1>
+            <div class="button-div" style="text-align: right">
+                <button
+                    @onclick="ToggleGenerateChart"
+                    type="button"
+                    class="btn btn-primary button"
+                >
+                    <i class="oi oi-bar-chart"></i>
+                </button>
+                <button
+                    @onclick="ToggleCreateTransaction"
+                    type="button"
+                    class="btn btn-success button"
+                >
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+            <table class="table">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Input</th>
+                        <th>Output</th>
+                        <th>Created At</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                        @if (TransactionList != null)
+                        {
+                            @foreach (var transaction in TransactionList)
+                            {
+                                <tr>
+                                    <td class="align-middle">@CurrencyFormmatter(transaction.Input)</td>
+                                    <td class="align-middle">@CurrencyFormmatter(transaction.Output)</td>
+                                    <td class="align-middle">@transaction.CreatedAt.ToShortDateString() </td>
+                                    <td class="align-middle word-break">@transaction.Description</td>
+                                    <td class="align-middle">
+                                        <button
+                                            @onclick="@(() => DeleteTransaction(transaction))"
+                                            type="button"
+                                            class="btn btn-danger"
+                                        >
+                                            <i class="oi oi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    public MainLayout Store { get; set; } = null!;
+
+    public TransactionDTO Transaction { get; set; } = new();
+
+    public IEnumerable<TransactionDTO>? TransactionList { get; set; }
+
+    public bool CreateTransaction { get; set; } = false;
+
+    public bool GenerateChart { get; set; }
+
+    public string? test { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchTransactions();
+    }
+
+    private async Task FetchTransactions()
+    {
+        string storedUserId = await localStorage.GetItemAsStringAsync("userId");
+        var list = await Http.GetFromJsonAsync<IEnumerable<TransactionDTO>>($"api/Transaction?baseId={storedUserId}");
+        TransactionList = list;
+    }
+
+    private void ToggleCreateTransaction()
+    {
+        CreateTransaction = true;
+    }
+
+    private async Task DeleteTransaction(TransactionDTO transaction)
+    {
+        var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri($"{Http.BaseAddress}api/Transaction"),
+                Content = new StringContent(JsonSerializer.Serialize(transaction), Encoding.UTF8, "application/json")
+            };
+
+        await Http.SendAsync(request);
+        await FetchTransactions();
+    }
+
+    public async Task HandleValidSubmit()
+    {
+        Transaction.BaseId = Store.UserId;
+        await Http.PostAsJsonAsync("api/Transaction", Transaction);
+        Transaction = new();
+        CreateTransaction = false;
+        await FetchTransactions();
+    }
+
+    private void HandleType(EventArgs e)
+    {
+        test = e.ToString()!;
+    }
+
+    private void ToggleGenerateChart()
+    {
+        GenerateChart = !GenerateChart;
+    }
+
+    private string CurrencyFormmatter(decimal d) => $"{d:C}";
+}

@@ -1,0 +1,144 @@
+﻿@inject HttpClient Http
+@inject ILocalStorageService localStorage
+
+@if (CreateGoal)
+{
+    <CreationModal Title="Goal" @bind-CreateEntry="CreateGoal">
+        <EditForm Model="@Goal" OnValidSubmit="@HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <div class="form-group mb-3">
+                <label class="form-label" for="name">Name</label>
+                <InputText class="form-control" id="name" name="name" @bind-Value="Goal.Name" />
+                <ValidationMessage For="@(() => Goal.Name)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="description">Description</label>
+                <InputText class="form-control" id="description" name="description" @bind-Value="Goal.Description" />
+                <ValidationMessage For="@(() => Goal.Description)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="value">Value</label>
+                <InputNumber class="form-control" id="value" name="value" @bind-Value="Goal.Value" />
+                <ValidationMessage For="@(() => Goal.Value)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="apr">APR</label>
+                <InputNumber class="form-control" id="apr" name="apr" @bind-Value="Goal.APR" />
+                <ValidationMessage For="@(() => Goal.APR)" />
+            </div>
+            <div class="form-group mb-3">
+                <input type="submit" class="btn btn-dark" value="Create" />
+            </div>
+        </EditForm>
+    </CreationModal>
+}
+
+<h1>Goals</h1>
+<div class="button-div" style="text-align: right">
+    <button
+        @onclick="ToggleCreateGoal"
+        type="button"
+        class="btn btn-success button"
+    >
+        <i class="oi oi-plus"></i>
+    </button>
+</div>
+<table class="table table-hover">
+    <thead class="thead-dark">
+        <th>Name</th>
+        <th>Description</th>
+        <th>Value</th>
+        <th>APR</th>
+        <th>Action</th>
+    </thead>
+    <tbody>
+        @if (Goals != null)
+        {
+            @foreach (var goal in Goals)
+            {
+                <tr style="cursor: pointer;" onclick="@(() => ToggleSelectedGoal(goal))">
+                    <td class="align-middle">@goal.Name</td>
+                    <td class="align-middle">@goal.Description</td>
+                    <td class="align-middle">@CurrMod(goal.Value)</td>
+                    <td class="align-middle">@($"{goal.APR/100:P}")</td>
+                    <td class="align-middle">
+                        <button
+                            @onclick="@(() => DeleteGoal(goal))"
+                            @onclick:stopPropagation
+                            type="button"
+                            class="btn btn-danger"
+                        >
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    [CascadingParameter]
+    public MainLayout Store { get; set; } = null!;
+
+    public GoalDTO Goal { get; set; } = new();
+
+    [Parameter]
+    public Func<decimal, string> CurrMod { get; set; } = null!;
+
+    [Parameter]
+    public GoalDTO? SelectedGoal { get; set; }
+
+    [Parameter]
+    public EventCallback<GoalDTO> SelectedGoalChanged { get; set; }
+
+    public IEnumerable<GoalDTO>? Goals { get; set; }
+
+    public bool CreateGoal { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchGoals();
+    }
+
+    private async Task ToggleSelectedGoal(GoalDTO goal)
+    {
+        SelectedGoal = goal;
+        await SelectedGoalChanged.InvokeAsync(SelectedGoal);
+    }
+
+    private async Task DeleteGoal(GoalDTO goal)
+    {
+        var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri($"{Http.BaseAddress}api/Goal"),
+                Content = new StringContent(JsonSerializer.Serialize(goal), Encoding.UTF8, "application/json")
+            };
+
+        await Http.SendAsync(request);
+        await FetchGoals();
+        SelectedGoal = null;
+        await SelectedGoalChanged.InvokeAsync(SelectedGoal);
+    }
+
+    private async Task FetchGoals()
+    {
+        var userId = await localStorage.GetItemAsStringAsync("userId");
+        Goals = await Http.GetFromJsonAsync<IEnumerable<GoalDTO>>($"api/Goal?baseId={userId}");
+    }
+
+    private void ToggleCreateGoal()
+    {
+        CreateGoal = !CreateGoal;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        Goal.BaseId = Store.UserId;
+        await Http.PostAsJsonAsync<GoalDTO>("api/Goal", Goal);
+        Goal = new();
+        CreateGoal = false;
+        await FetchGoals();
+    }
+}

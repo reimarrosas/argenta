@@ -1,0 +1,92 @@
+﻿@using FinalArgentaFrontend.Utils
+@inject HttpClient Http
+
+    <BarChart @ref="barChart" TItem="decimal" />
+    <h2 class="text-center h5 mt-3">@($"Total Return On Investment: {TotalROI:P}")</h2>
+
+@code {
+    BarChart<decimal> barChart = null!;
+
+    [Parameter]
+    public IEnumerable<InvestmentEntryDTO> InvestmentEntries { get; set; } = null!;
+
+    private decimal TotalROI { get; set; }
+
+    private bool Loading { get; set; } = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await HandleRedraw();
+        }
+    }
+
+    async Task HandleRedraw()
+    {
+        var ds = await GenerateDataset();
+        await barChart.Clear();
+        await barChart.AddLabelsDatasetsAndUpdate(
+            ds.Keys.ToList(),
+            new BarChartDataset<decimal>
+            {
+                Label = "Delta of Total Current Value to Total Purchase Value",
+                Data = ds.Values.ToList(),
+                BackgroundColor = GenerateColors(),
+                BorderColor= ChartColor.FromHtmlColorCode("#000"),
+            }
+        ).ContinueWith(t => Loading = false);
+    }
+
+    async Task<List<Tuple<string, decimal>>> FetchTickerPrices()
+    {
+        var distinctTickers = InvestmentEntries.Distinct(new EntryComparer());
+        var ret = new List<Tuple<string, decimal>>();
+
+        foreach (var i in distinctTickers)
+        {
+            var res = JsonSerializer.Deserialize<Dictionary<string, dynamic>>(await Http.GetStringAsync($"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={i.Ticker}&apikey=S9T8F28T6PAYVQVC"));
+            if (res != null && res.ContainsKey("Global Quote")) {
+                string price = GetItem(res!["Global Quote"], "05. price");
+                ret.Add(Tuple.Create(i.Ticker, decimal.Parse(price)));
+            }
+        }
+
+        return ret;
+    }
+
+    async Task<IDictionary<string, decimal>> GenerateDataset()
+    {
+        var tickerPrices = await FetchTickerPrices();
+        var ret = new Dictionary<string, decimal>();
+        var aggregate = 0.0m;
+        foreach (var i in InvestmentEntries)
+        {
+            var priceTup = tickerPrices.Find(t => t.Item1 == i.Ticker);
+            if (priceTup != default) {
+                var (ticker, price) = priceTup;
+                var delta = (i.UnitPrice - price) * i.Count;
+                ret.Add($"{ticker}, {(i.UnitPrice * i.Count):C}", delta);
+                aggregate += delta;
+            }
+        }
+
+        TotalROI = aggregate / InvestmentEntries.Aggregate(0.0m, (acc, cur) => acc + cur.TotalPrice);
+        return ret;
+    }
+
+    string GenerateColors()
+    {
+        return ChartColor.FromRgba((byte)new Random(DateTime.Now.Millisecond).Next(50, 206),
+                                   (byte)new Random(DateTime.Now.Millisecond * 3).Next(50, 206),
+                                   (byte)new Random(DateTime.Now.Millisecond * 7).Next(50, 206),
+                                   0.75f);
+    }
+
+    private string GetItem(object item, string key)
+    {
+        var itemStr = item.ToString();
+        var itemDict = JsonSerializer.Deserialize<Dictionary<string, string>>(itemStr!);
+        return itemDict![key];
+    }
+}

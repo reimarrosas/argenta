@@ -1,0 +1,173 @@
+﻿@inject HttpClient Http
+
+@if (CreateInvestmentEntry)
+{
+    <CreationModal Title="Investment Entry" @bind-CreateEntry="CreateInvestmentEntry">
+        <EditForm Model="@InvestmentEntry" OnValidSubmit="@HandleValidSubmit" style="@(Submittable ? "" : "padding-bottom: 1em;")">
+            <DataAnnotationsValidator />
+            <div class="form-group mb-3">
+                <label class="form-label" for="ticker">Ticker</label>
+                <InputText
+                    class="form-control"
+                    @onfocus="@(() => Submittable = false)"
+                    id="ticker"
+                    name="ticker"
+                    Value="@InvestmentEntry.Ticker"
+                    ValueExpression="() => InvestmentEntry.Ticker"
+                    ValueChanged="ValChanged"
+                />
+                @if (DisplaySearch)
+                {
+                    <div style="position: relative;">
+                    <EntrySearchResult
+                        @bind-SearchQuery="@InvestmentEntry.Ticker"
+                        @bind-DisplaySearch="DisplaySearch"
+                        @bind-Submittable="Submittable"
+                    />
+                    </div>
+                }
+                <ValidationMessage For="@(() => InvestmentEntry.Ticker)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="unitPrice">Unit Price on Purchase</label>
+                <InputNumber class="form-control" id="unitPrice" name="unitPrice" @bind-Value="InvestmentEntry.UnitPrice" />
+                <ValidationMessage For="@(() => InvestmentEntry.UnitPrice)" />
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="count">Purchase Count</label>
+                <InputNumber class="form-control" id="count" name="count" @bind-Value="InvestmentEntry.Count" />
+                <ValidationMessage For="@(() => InvestmentEntry.Count)" />
+            </div>
+            @if (Submittable)
+            {
+                <div class="form-group mb-3">
+                    <input type="submit" class="btn btn-dark" value="Create" />
+                </div>    
+            }
+        </EditForm>
+    </CreationModal>
+}
+
+@if (GenerateChart)
+{
+    <CreationModal Title="" @bind-CreateEntry="GenerateChart">
+        <InvestmentEntryChart InvestmentEntries="InvestmentEntries" />
+    </CreationModal>
+}
+
+<h1>Investment Entries</h1>
+<div class="button-div" style="text-align: right">
+    <button
+        @onclick="ToggleGenerateChart"
+        type="button"
+        class="btn btn-primary button"
+    >
+        <i class="oi oi-bar-chart"></i>
+    </button>
+    <button
+        @onclick="ToggleCreateInvestmentEntry"
+        type="button"
+        class="btn btn-success button"
+    >
+        <i class="oi oi-plus"></i>
+    </button>
+</div>
+<table class="table table-hover">
+    <thead class="thead-dark">
+        <th class="text-center">Ticker</th>
+        <th class="text-center">Unit Price</th>
+        <th class="text-center">Count</th>
+        <th class="text-center">Total Price</th>
+        <th class="text-center">Action</th>
+    </thead>
+    <tbody>
+        @if (InvestmentEntries != null)
+        {
+            @foreach (var entry in InvestmentEntries)
+            {
+                <tr>
+                    <td class="align-middle text-center">@entry.Ticker</td>
+                    <td class="align-middle text-center">@($"{entry.UnitPrice:C}")</td>
+                    <td class="align-middle text-center">@entry.Count</td>
+                    <td class="align-middle text-center">@($"{entry.TotalPrice:C}")</td>
+                    <td class="align-middle text-center">
+                        <button
+                            @onclick="@(() => DeleteInvestmentEntry(entry))"
+                            type="button"
+                            class="btn btn-danger"
+                        >
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public InvestmentDTO SelectedInvestment { get; set; } = null!;
+
+    public InvestmentEntryDTO InvestmentEntry { get; set; } = new();
+
+    public bool GenerateChart { get; set; } = false;
+
+    public bool CreateInvestmentEntry { get; set; }
+
+    private IEnumerable<InvestmentEntryDTO>? InvestmentEntries { get; set; }
+
+    public string? SearchQuery { get; set; }
+
+    public bool DisplaySearch { get; set; } = false;
+
+    public bool Submittable { get; set; } = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await FetchEntries();
+    }
+
+    private async Task FetchEntries()
+    {
+        InvestmentEntries = await Http.GetFromJsonAsync<IEnumerable<InvestmentEntryDTO>>($"api/InvestmentEntry?baseId={SelectedInvestment.Id}");
+    }
+
+    private void ToggleGenerateChart()
+    {
+        GenerateChart = !GenerateChart;
+    }
+
+    private void ToggleCreateInvestmentEntry()
+    {
+        CreateInvestmentEntry = !CreateInvestmentEntry;
+    }
+
+    private async Task DeleteInvestmentEntry(InvestmentEntryDTO entry)
+    {
+        var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri($"{Http.BaseAddress}api/InvestmentEntry"),
+                Content = new StringContent(JsonSerializer.Serialize(entry), Encoding.UTF8, "application/json")
+            };
+
+        await Http.SendAsync(request);
+        await FetchEntries();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        InvestmentEntry.BaseId = SelectedInvestment.Id;
+        await Http.PostAsJsonAsync<InvestmentEntryDTO>("api/InvestmentEntry", InvestmentEntry);
+        await FetchEntries();
+        InvestmentEntry = new();
+        ToggleCreateInvestmentEntry();
+    }
+
+    public void ValChanged(string value)
+    {
+        InvestmentEntry.Ticker = value;
+        DisplaySearch = true;
+    }
+}

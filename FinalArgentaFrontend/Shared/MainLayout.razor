@@ -1,0 +1,18 @@
+﻿@inherits LayoutComponentBase
+
+<CascadingValue Value="this">
+    <NavMenu />
+    <main>
+        @Body
+    </main>
+    <Footer />
+</CascadingValue>
+@code {
+    public Guid UserId { get; set; }
+
+    public void SetUserId(Guid userId)
+    {
+        UserId = userId;
+        StateHasChanged();
+    }
+}

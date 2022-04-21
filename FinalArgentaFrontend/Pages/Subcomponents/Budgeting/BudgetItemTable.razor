@@ -1,0 +1,163 @@
+﻿@inject HttpClient Http
+
+@if (CreateBudgetItem)
+{
+    <CreationModal Title="Budget Item" @bind-CreateEntry="CreateBudgetItem">
+        <EditForm Model="@BudgetItem" OnSubmit="@HandleSubmit">
+            <DataAnnotationsValidator />
+            <div class="form-group mb-3">
+                <label class="form-label" for="name">Name</label>
+                <InputText class="form-control" id="name" name="Name" @bind-Value="BudgetItem.Name" />
+                <ValidationMessage For="@(() => BudgetItem.Name)" />
+                @if (!IsNameValid) { <span class="text-danger">Name already exists</span> }
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label" for="percentage">Percentage</label>
+                <InputNumber class="form-control" id="percentage" name="Total" @bind-Value="BudgetItem.Percentage" />
+                <ValidationMessage For="@(() => BudgetItem.Percentage)" />
+                @if (!IsPercentageValid) { <span class="text-danger">Aggregate Total is greater than 100</span> }
+            </div>
+            <div class="form-group mb-3">
+                <input type="submit" class="btn btn-dark" value="Create" />
+            </div>
+        </EditForm>
+    </CreationModal>
+}
+
+@if (GenerateChart)
+{
+    <CreationModal Title="" @bind-CreateEntry="GenerateChart">
+        <BudgetItemChart SelectedBudget="SelectedBudget" BudgetItems="BudgetItems" />
+    </CreationModal>
+}
+
+            <h1>Budget Items</h1>
+            <div class="button-div">
+                <button
+                    @onclick="ToggleChart"
+                    type="button"
+                    class="btn @(CheckIfChartGenerationPossible() ? "btn-primary" : "btn-secondary") button"
+                >
+                    <i class="oi oi-bar-chart"></i>
+                </button>
+                <button
+                    @onclick="ToggleCreateBudgetItem"
+                    type="button"
+                    class="btn btn-success button"
+                >
+                    <i class="oi oi-plus"></i>
+                </button>
+            </div>
+            <table class="table table responsive">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Percentage</th>
+                        <th>Value</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (BudgetItems != null)
+                    {
+                        @foreach (var budgetItem in BudgetItems)
+                        {
+                            <tr>
+                                <td class="align-middle">@budgetItem.Name</td>
+                                <td class="align-middle">@budgetItem.Percentage</td>
+                                <td class="align-middle">@($"{((budgetItem.Percentage / 100.0M) * SelectedBudget.Total):C}")</td>
+                                <td class="align-middle">
+                                    <button
+                                        @onclick="@(() => DeleteBudgetItem(budgetItem))"
+                                        class="btn btn-danger"
+                                    >
+                                        <i class="oi oi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+@code {
+    [CascadingParameter]
+    public MainLayout Store { get; set; } = null!;
+
+    [Parameter]
+    public BudgetDTO SelectedBudget { get; set; } = null!;
+
+    public bool CreateBudgetItem { get; set; } = false;
+
+    public bool IsPercentageValid { get; set; } = true;
+
+    public bool IsNameValid { get; set; } = true;
+
+    public bool GenerateChart { get; set; } = false;
+
+    public BudgetItemDTO BudgetItem { get; set; } = new();
+
+    public IEnumerable<BudgetItemDTO>? BudgetItems { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await FetchBudgetItems();
+    }
+
+    private async Task FetchBudgetItems()
+    {
+        BudgetItems = await Http.GetFromJsonAsync<IEnumerable<BudgetItemDTO>>($"api/BudgetItem?baseId={SelectedBudget.Id}");
+    }
+
+    public void ToggleCreateBudgetItem()
+    {
+            CreateBudgetItem = true;
+    }
+
+    public async Task DeleteBudgetItem(BudgetItemDTO budgetItem)
+    {
+        var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Delete,
+                RequestUri = new Uri($"{Http.BaseAddress}api/BudgetItem"),
+                Content = new StringContent(JsonSerializer.Serialize(budgetItem), Encoding.UTF8, "application/json")
+            };
+
+        await Http.SendAsync(request);
+        await FetchBudgetItems();
+    }
+
+    public async Task HandleSubmit(EditContext context)
+    {
+        IsPercentageValid = IsNameValid = true;
+        bool areInputsValid = context.Validate();
+        if (BudgetItems != null && BudgetItems.Any())
+        {
+            var currTotal = BudgetItems.Select(bi => bi.Percentage)
+                                       .Aggregate((acc, cur) => acc + cur);
+            IsPercentageValid = currTotal + BudgetItem.Percentage <= 100;
+
+            IsNameValid = !BudgetItems.Any(bi => bi.Name == BudgetItem.Name);
+        }
+
+
+        if (IsPercentageValid && areInputsValid && IsNameValid)
+        {
+            BudgetItem.BaseId = SelectedBudget.Id;
+            await Http.PostAsJsonAsync("api/BudgetItem", BudgetItem);
+            BudgetItem = new();
+            CreateBudgetItem = false;
+            await FetchBudgetItems();
+        }
+    }
+
+    private void ToggleChart()
+    {
+        GenerateChart = CheckIfChartGenerationPossible();
+    }
+
+    private bool CheckIfChartGenerationPossible() {
+        return BudgetItems != default
+            && BudgetItems.Aggregate(0, (acc, cur) => acc + cur.Percentage) == 100;
+    }
+}

@@ -1,0 +1,13 @@
+﻿<div class="col text-center section-img">
+    <img src=@SrcImg
+        class="img-fluid"
+        alt=@AltText
+    />
+</div>
+
+@code {
+    [Parameter]
+    public string? SrcImg { get; set; }
+    [Parameter]
+    public string? AltText { get; set; }
+}

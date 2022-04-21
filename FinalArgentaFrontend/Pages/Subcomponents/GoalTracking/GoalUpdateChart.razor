@@ -1,0 +1,115 @@
+﻿<LineChart @ref="lineChart" TItem="decimal" />
+
+@code {
+    LineChart<decimal> lineChart = null!;
+
+    [Parameter]
+    public IEnumerable<GoalUpdateDTO> GoalUpdates { get; set; } = null!;
+
+    [Parameter]
+    public GoalDTO SelectedGoal { get; set; } = null!;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await HandleRedraw();
+        }
+    }
+
+    async Task HandleRedraw()
+    {
+        var labels = GenerateBaseLineList();
+        await lineChart.Clear();
+        await lineChart.AddLabelsDatasetsAndUpdate(
+            labels.Select(l => l.ToShortDateString()).ToList(),
+            new LineChartDataset<decimal>
+            {
+                Label = "GoalUpdate Payments",
+                Data = GenerateIncrementalUpdate(labels),
+                BackgroundColor = GenerateColors(),
+                BorderColor = GenerateColors(),
+                Fill = true,
+                PointRadius = 5,
+                PointBackgroundColor = ChartColor.FromRgba(0, 0, 0, 1.0f),
+                SpanGaps = true
+            });
+        await lineChart.AddDatasetsAndUpdate(
+            new LineChartDataset<decimal>
+            {
+                Label = "Goal APR Growth",
+                Data = GenerateGoalGrowth(labels).Select(g => decimal.Round(g, 2)).ToList(),
+                BackgroundColor = GenerateColors(),
+                BorderColor = GenerateColors(),
+                Fill = true,
+                PointRadius = 5,
+                PointBackgroundColor = ChartColor.FromRgba(0, 0, 0, 1.0f),
+                SpanGaps = true
+            });
+    }
+
+    List<DateTime> GenerateBaseLineList()
+    {
+        var guArr = GoalUpdates.OrderBy(gu => gu.CreatedAt).ToArray();
+        var start = guArr[0].CreatedAt;
+        var end = guArr[guArr.Length - 1].CreatedAt;
+        var monthDiff = Math.Abs(end.Subtract(start).Days) / 30;
+        var diff = monthDiff < 12 ? 12 : monthDiff;
+
+        var baselineList = new List<DateTime>();
+        for (int i = 0; i <= diff; ++i)
+        {
+            baselineList.Add(new DateTime(start.Ticks).AddMonths(i));
+        }
+
+        return baselineList;
+    }
+
+    List<decimal> GenerateIncrementalUpdate(List<DateTime> labels)
+    {
+        var ret = new List<decimal>();
+        var finalPaymentDate = GoalUpdates.Select(gu => gu.CreatedAt)
+                                          .OrderBy(l => l)
+                                          .LastOrDefault();
+        decimal aggregate = 0.0m;
+        DateTime prev = default;
+        foreach (var i in labels)
+        {
+            decimal acc = GoalUpdates.Where(gu => gu.CreatedAt < i && gu.CreatedAt >= prev)
+                                     .Aggregate(0.0m, (acc, cur) => acc + cur.Payment);
+            ret.Add(acc + aggregate);
+            aggregate += acc;
+            prev = i;
+            if (i > finalPaymentDate)
+                break;
+        }
+
+        return ret;
+    }
+
+    List<decimal> GenerateGoalGrowth(List<DateTime> labels)
+    {
+        var ret = new List<decimal>();
+        var aprPerMonth = decimal.ToDouble(SelectedGoal.APR / 100 / 12);
+        var initialDate = labels.FirstOrDefault();
+
+        double counter = 0.0f;
+        foreach (var i in labels)
+        {
+            decimal monthlyPayment = SelectedGoal.Value * Convert.ToDecimal(Math.Pow((1 + aprPerMonth), counter));
+            ret.Add(monthlyPayment);
+            ++counter;
+        }
+
+        return ret;
+    }
+
+    string GenerateColors()
+    {
+        return ChartColor.FromRgba((byte)new Random(DateTime.Now.Millisecond).Next(50, 206),
+                                   (byte)new Random(DateTime.Now.Millisecond * 3).Next(50, 206),
+                                   (byte)new Random(DateTime.Now.Millisecond * 7).Next(50, 206),
+                                   0.75f);
+    }
+}

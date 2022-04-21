@@ -1,0 +1,62 @@
+﻿<LineChart @ref="lineChart" TItem="double" />
+
+@code {
+    LineChart<double> lineChart = null!;
+
+    [Parameter]
+    public IEnumerable<TransactionDTO> Transactions { get; set; } = null!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        Transactions.ToList().Sort((t1, t2) => t1.CreatedAt.CompareTo(t2.CreatedAt));
+
+        if (firstRender)
+        {
+            await HandleRedraw();
+        }
+    }
+
+    async Task HandleRedraw()
+    {
+        await lineChart.Clear();
+        await lineChart.AddLabelsDatasetsAndUpdate(GenerateLabels(), GetDataset());
+    }
+
+    List<string> GenerateLabels()
+    {
+        return Transactions.Select(t => t.CreatedAt.ToString()).ToList();
+    }
+
+    LineChartDataset<double> GetDataset()
+    {
+        return new LineChartDataset<double>
+            {
+                Label = "Transactions",
+                Data = Transactions.Select(t =>
+                {
+                    var net = t.Input - t.Output;
+                    return decimal.ToDouble(net);
+                }).ToList(),
+                BackgroundColor = GenerateColors(),
+                BorderColor = GenerateColors(),
+                Fill = true,
+                PointRadius = 5,
+                BorderDash = new List<int> { },
+                PointBorderColor = GenerateColors()
+            };
+    }
+
+    string GenerateColors()
+    {
+        return ChartColor.FromRgba((byte)new Random(DateTime.Now.Millisecond).Next(50, 206),
+                                   (byte)new Random(DateTime.Now.Millisecond * 3).Next(50, 206),
+                                   (byte)new Random(DateTime.Now.Millisecond * 7).Next(50, 206),
+                                   GenerateAlpha());
+    }
+
+    float GenerateAlpha()
+    {
+        var r = new Random(DateTime.Now.Millisecond);
+        return r.NextSingle();
+    }
+}
